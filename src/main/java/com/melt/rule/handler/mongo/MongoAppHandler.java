@@ -1,10 +1,5 @@
 package com.melt.rule.handler.mongo;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.alibaba.fastjson.JSONObject;
 import com.melt.rule.RuleServiceLoader;
 import com.melt.rule.bean.RuleConstant;
@@ -14,10 +9,15 @@ import com.melt.rule.exception.RuleException;
 import com.melt.rule.exception.RuleRuntimeException;
 import com.melt.rule.function.IFunction;
 import com.melt.rule.handler.AppHandler;
+import com.melt.rule.utils.CollectionUtils;
 import com.melt.rule.utils.RulePropertyUtils;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class MongoAppHandler extends AppHandler{
 
@@ -34,9 +34,15 @@ public class MongoAppHandler extends AppHandler{
 		if(context == null){
 			throw new RuleException("rule context not allowed to be null! ") ;
 		}
+
 		if(StringUtils.isBlank(context.getRuleId())){
-			throw new RuleException("rule context not allowed to be null! ") ;
+			throw new RuleException("ruleId not allowed to be null! ") ;
 		}
+
+		if(CollectionUtils.isEmpty(context.getInputVar())){
+			throw new RuleException("inputVar not allowed to be null! ") ;
+		}
+		//TODO 检查是否存在fun这样的集合，这个应该服务启动下检查
 		ThreadLocalHolder.set(RuleConstant.MONGO_CLIENT_KEY, mongoClient) ;
 		//TODO 通过ruleId查询functionList
 		List<String> funList = Arrays.asList("mongo.SayHello") ;
