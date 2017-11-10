@@ -1,13 +1,13 @@
 package com.melt.rule;
 
-import java.util.Map;
-
+import com.melt.rule.exception.RuleException;
+import com.melt.rule.function.IFunction;
+import com.melt.rule.handler.AppHandler;
+import com.melt.rule.utils.RulePropertyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.melt.rule.exception.RuleException;
-import com.melt.rule.function.IFunction;
-import com.melt.rule.utils.RulePropertyUtils;
+import java.util.Map;
 
 /**
  * 规则引擎服务
@@ -32,6 +32,12 @@ public class RuleService {
 		logger.info("load rule function services finish !");
 		RuleServiceLoader.load(RuleEnginner.class) ;
 		logger.info("load rule handler services finish !");
+
+		/**
+		 * 初始化处理器
+		 */
+		((AppHandler)getRuleEnginner()).init();
+
 	}
 	
 	/**

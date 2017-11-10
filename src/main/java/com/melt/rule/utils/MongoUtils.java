@@ -1,7 +1,5 @@
 package com.melt.rule.utils;
 
-import com.melt.rule.bean.RuleConstant;
-import com.melt.rule.bean.ThreadLocalHolder;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
@@ -31,7 +29,7 @@ import static com.mongodb.client.model.Projections.*;
  */
 public class MongoUtils {
 
-//	private static MongoClient mongoClient;
+	public static MongoClient mongoClient;
 //	private static GridFSBucket gridFSBucket ;
 
     /**
@@ -42,7 +40,7 @@ public class MongoUtils {
     public static void checkNotNull(String dbName,String colName){
         Assert.notNull(dbName,"数据库名称不能为空！");
         Assert.notNull(colName,"集合名称不能为空！");
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
+//        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         Assert.notNull(mongoClient,"mongoClient不能为空，请查询配置！");
     }
 	/**
@@ -52,11 +50,10 @@ public class MongoUtils {
 	 * @param id        主键
 	 * @return
 	 */
-	public static Document queyrById(String dbName,String colName, String id) {
+	public static Document queryById(String dbName,String colName, String id) {
         checkNotNull(dbName,colName);
         Assert.notNull(id,"查询主键不能为空！");
         ObjectId _idobj = new ObjectId(id);;
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		return mongoClient.getDatabase(dbName).getCollection(colName).find(Filters.eq("_id", _idobj)).first() ;
 	}
 
@@ -71,7 +68,6 @@ public class MongoUtils {
 	 */
 	public static Long getCount(String dbName,String colName, Bson filter) {
         checkNotNull(dbName,colName);
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         MongoCollection<Document> collection = mongoClient.getDatabase(dbName).getCollection(colName);
         return filter != null ? collection.count(filter) : collection.count();
 	}
@@ -86,7 +82,6 @@ public class MongoUtils {
      */
 	public static List<Document> query(String dbName, String colName, Bson filter) {
         checkNotNull(dbName,colName);
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		return mongoClient.getDatabase(dbName).getCollection(colName).find(filter).into(new ArrayList<Document>()) ;
 	}
 
@@ -102,7 +97,6 @@ public class MongoUtils {
 	public static List<Document> queryByPage(String dbName, String colName, Bson filter, int pageNo, int pageSize) {
         checkNotNull(dbName,colName);
 		Bson orderBy = new BasicDBObject("_id", 1);
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		return mongoClient.getDatabase(dbName).getCollection(colName).find(filter)
                 .sort(orderBy).skip((pageNo - 1) * pageSize).limit(pageSize).into(new ArrayList<>()) ;
 	}
@@ -122,7 +116,6 @@ public class MongoUtils {
                                               Bson orderBy,int pageNo, int pageSize) {
         checkNotNull(dbName,colName);
         FindIterable<Document> fi = null ;
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         if(filter != null){
             fi = mongoClient.getDatabase(dbName).getCollection(colName).find(filter) ;
         } else {
@@ -163,7 +156,6 @@ public class MongoUtils {
                                                      Bson orderBy,int pageNo, int pageSize) {
         checkNotNull(dbName,colName);
         FindIterable<Document> fi = null ;
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         if(filter != null){
             fi = mongoClient.getDatabase(dbName).getCollection(colName).find(filter) ;
         } else {
@@ -202,7 +194,6 @@ public class MongoUtils {
 		for(String id : ids){
 			idsList.add(new ObjectId(id)) ;
 		}
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		FindIterable<Document> fi = mongoClient.getDatabase(dbName).getCollection(colName)
                             .find(Filters.in("_id", idsList)) ;
 		/***
@@ -243,7 +234,6 @@ public class MongoUtils {
 		if(!doc.containsKey("last_time")){
 			doc.append("last_time", new Date());
 		}
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         mongoClient.getDatabase(dbName).getCollection(colName).insertOne(doc);
 		return doc.getObjectId("_id").toString() ;
 	}
@@ -262,7 +252,6 @@ public class MongoUtils {
 		ObjectId _id =  new ObjectId(id);
 
 		Bson filter = Filters.eq("_id", _id);
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		DeleteResult deleteResult = mongoClient.getDatabase(dbName).getCollection(colName).deleteOne(filter);
 		count = (int) deleteResult.getDeletedCount();
 		return count;
@@ -278,7 +267,6 @@ public class MongoUtils {
 	public static int deleteByWhere(String dbName,String colName, Bson filter) {
         checkNotNull(dbName,colName);
 		int count = 0;
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
 		DeleteResult deleteResult = mongoClient.getDatabase(dbName).getCollection(colName).deleteMany(filter);
 		count = (int) deleteResult.getDeletedCount();
 		return count;
@@ -300,7 +288,6 @@ public class MongoUtils {
 		ObjectId _idobj = new ObjectId(id);;
 		Bson filter = Filters.eq("_id", _idobj);
 		// coll.replaceOne(filter, newdoc); // 完全替代
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         mongoClient.getDatabase(dbName).getCollection(colName).updateOne(filter, new Document("$set", newdoc));
 		
 		return 1;
@@ -319,10 +306,9 @@ public class MongoUtils {
 
 		Bson filter = Filters.eq("_id", new ObjectId(id));
 		// coll.replaceOne(filter, newdoc); // 完全替代
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         mongoClient.getDatabase(dbName).getCollection(colName).
                 updateOne(filter, new Document("$inc", new Document(col,1)));
-		
+
 		return 1;
 	}
 
@@ -337,7 +323,6 @@ public class MongoUtils {
 	public static int desById(String dbName,String colName, String id, String col) {
         checkNotNull(dbName,colName);
 		Bson filter = Filters.eq("_id", new ObjectId(id));
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         mongoClient.getDatabase(dbName).getCollection(colName).
                 updateOne(filter, new Document("$inc", new Document(col,-1)));
 		
@@ -357,7 +342,6 @@ public class MongoUtils {
         Assert.notNull(dbName,"数据库名称不能为空！");
         Assert.notNull(fileName,"集合名称不能为空！");
         Assert.notNull(inputStream,"文件流不能为空！");
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         Assert.notNull(mongoClient,"mongoClient不能为空，请查询配置！");
         MongoDatabase database = mongoClient.getDatabase(dbName);
 		GridFSUploadOptions options = new GridFSUploadOptions()
@@ -375,7 +359,6 @@ public class MongoUtils {
 	public static byte[] downloadStream(String dbName,String id){
         Assert.notNull(dbName,"数据库名称不能为空！");
         Assert.notNull(id,"主键id不能为空！");
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         Assert.notNull(mongoClient,"mongoClient不能为空，请查询配置！");
 
         MongoDatabase database = mongoClient.getDatabase(dbName);
@@ -416,7 +399,6 @@ public class MongoUtils {
 	public static Map<String,String> getGridFileInfo(String dbName,String id){
         Assert.notNull(dbName,"数据库名称不能为空！");
         Assert.notNull(id,"主键id不能为空！");
-        MongoClient mongoClient = ThreadLocalHolder.get(RuleConstant.MONGO_CLIENT_KEY,MongoClient.class) ;
         Assert.notNull(mongoClient,"mongoClient不能为空，请查询配置！");
 
 		Bson filter = Filters.eq("_id", new ObjectId(id));
@@ -432,6 +414,7 @@ public class MongoUtils {
         resMap.put("id", id) ;
         return resMap ;
 	}
-	
+
+
 
 }

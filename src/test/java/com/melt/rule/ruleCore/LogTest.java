@@ -13,6 +13,7 @@ public class LogTest {
     {  
     	log.debug("debug()...");  
     	log.info("info()...");  
-    	log.error("error()...");  
+    	log.error("error()...");
+        log.info("load rule metadata mongo client host:[{}]","127.0.0.1");
     }  
 }

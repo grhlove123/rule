@@ -2,12 +2,25 @@ package com.melt.rule.handler;
 
 import com.alibaba.fastjson.JSONObject;
 import com.melt.rule.RuleEnginner;
+import com.melt.rule.bean.HandlerType;
 import com.melt.rule.bean.RuleContext;
 import com.melt.rule.exception.RuleException;
 
 public abstract class AppHandler implements RuleEnginner {
 
-	
+	/**
+	 * 返回当前处理器的类型 {@link com.melt.rule.bean.HandlerType}
+	 * @return
+	 */
+	public abstract HandlerType getHandlerType() ;
+
+	/**
+	 * 初始化，只有服务刚启动时才调用一次，这个应该用static,不过还没有想好怎么写，以后改进
+	 * @throws RuleException
+	 */
+	public abstract void init() throws RuleException;
+
+
 	/**
 	 * 在{@link #handle(RuleContext)}之前执行
 	 * @param context
