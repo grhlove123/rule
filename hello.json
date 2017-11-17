@@ -1,0 +1,36 @@
+{
+	"ruleId":"11",
+	"dbName":"",
+	"colName":"",
+	"funs":[		
+		{
+			"dbName":"xx",
+			"colName":"xx",
+			"funName":"insertOne",
+			"input":"inputVar.data"
+		  
+		},
+		{
+			"dbName":"xx",
+			"colName":"xx",
+			"funName":"query",
+			"input":"inputVar.data/tmpVar.xxKey",
+			"output":"resultVar.data",
+			"select":"",
+			"where":{
+				 "$and" : 
+					[
+					  { "$or" : [ { "price" : "#inputVar.p1" }, { "price" : "#inputVar.p2" } ] },
+					  { "$or" : [ { "sale" : "#inputVar.sale" }, { "qty" : { "$lt" : "#inputVar.p1" } } ] }
+					]
+			},
+		   "limit":{
+			  "pageIndex":"#inputVar.pageIndex",
+			  "pageSize":"#inputVar.pageSize"
+		   },
+		  "orderBy":
+			{"aa":1,"bb":-1}			
+		  
+		}
+	]
+}
