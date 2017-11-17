@@ -1,15 +1,15 @@
 package com.melt.rule;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.melt.rule.exception.RuleException;
+import com.melt.rule.utils.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.melt.rule.exception.RuleException;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 加载 服务
@@ -52,9 +52,11 @@ public class RuleServiceLoader {
 			String configContent = IOUtils.toString(configFileUrl.openStream());
 			String[] serviceNames = configContent.split("\n");
 			for (String serviceName : serviceNames) {
-				Class<?> serviceClass = (Class<?>)RuleServiceLoader.class.getClassLoader().loadClass(serviceName);
+				Class<?> serviceClass = (Class<?>)RuleServiceLoader.class.getClassLoader().loadClass(
+						StringUtils.replaceBlank(serviceName)
+				);
 //				Object serviceInstance = serviceClass.newInstance();
-				services.put(serviceName, serviceClass) ;
+				services.put(StringUtils.replaceBlank(serviceName), serviceClass) ;
 				logger.info("loaded provider {} of {}",serviceName,clasName);
 			}
 		}

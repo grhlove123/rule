@@ -487,9 +487,10 @@ public class MongoUtils {
 				recursiveReplace((JSONObject) val,context);
 			} else if (val instanceof JSONArray){
 				JSONArray jsonArray = (JSONArray)val ;
-				jsonArray.forEach(k -> {
-					recursiveReplace((JSONObject)k,context);
-				});
+//				jsonArray.forEach(k -> {
+//					recursiveReplace((JSONObject)k,context);
+//				});
+				jsonArray.stream().filter(k -> k instanceof JSONObject).forEach(s -> recursiveReplace((JSONObject)s,context));
 			}
 
 		}

@@ -1,1 +1,3 @@
 com.melt.rule.function.mongo.SayHello
+com.melt.rule.function.mongo.InsertOne
+com.melt.rule.function.mongo.SimpleQuery

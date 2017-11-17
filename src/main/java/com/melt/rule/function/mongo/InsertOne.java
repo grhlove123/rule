@@ -27,7 +27,7 @@ public class InsertOne implements IFunction {
         }
 
         if(StringUtils.isEmpty(colName)){
-            dbName = rule.getString("colName") ;
+            colName = rule.getString("colName") ;
         }
         /**
          * 为空，默认库

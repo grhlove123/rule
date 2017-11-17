@@ -51,8 +51,10 @@ public class MongoAppHandler extends AppHandler{
 		logger.info("load rule metadata mongo client port:[{}]",rulePort);
 		mongoClient = new MongoClient(ruleHost, Integer.parseInt(rulePort));
 		logger.info("load rule metadata mongo client success !");
+		MongoUtils.mongoClient = mongoClient ;
 		List<String> colList = mongoClient.getDatabase(RuleConstant.RULE_METADATA_DB).listCollectionNames()
 				.into(new ArrayList<>());
+
 		if (CollectionUtils.isEmpty(colList)){
 			throw new RuleException("rule metadata [" + RuleConstant.RULE_METADATA_DB +"] database found no tables");
 		}
@@ -70,6 +72,7 @@ public class MongoAppHandler extends AppHandler{
 		List<Document> rules = MongoUtils.query(RuleConstant.RULE_METADATA_DB,RuleConstant.STRATEGY,new Document()) ;
 		if (!CollectionUtils.isEmpty(rules)){
 			rules.forEach(r -> {
+				logger.debug("load strategy : {}",r);
 				RuleConstant.STRATEGY_META.put(r.get("_id").toString(),r) ;
 			});
 		}

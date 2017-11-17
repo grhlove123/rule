@@ -39,7 +39,7 @@ public class SimpleQuery implements IFunction{
         }
 
         if(StringUtils.isEmpty(colName)){
-            dbName = rule.getString("colName") ;
+            colName = rule.getString("colName") ;
         }
 
         /**
@@ -70,6 +70,7 @@ public class SimpleQuery implements IFunction{
             pageSize = (int)JsonUtils.getValue(spageSize, context);
         }
         List<Document> list = MongoUtils.query(dbName, colName, cols, where, orderBy, pageIndex, pageSize);
+        System.out.println(list.size());
         if (!StringUtils.isEmpty(varOutput)){
             context.putTmpOrResultValue(varOutput,list);
         }
