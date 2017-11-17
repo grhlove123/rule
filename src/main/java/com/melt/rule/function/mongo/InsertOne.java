@@ -1,12 +1,10 @@
 package com.melt.rule.function.mongo;
 
 import com.alibaba.fastjson.JSONObject;
+import com.melt.rule.bean.RuleConstant;
 import com.melt.rule.bean.RuleContext;
 import com.melt.rule.function.IFunction;
-import com.melt.rule.utils.Assert;
-import com.melt.rule.utils.MongoUtils;
-import com.melt.rule.utils.RulePropertyUtils;
-import com.melt.rule.utils.StringUtils;
+import com.melt.rule.utils.*;
 import org.bson.Document;
 
 /**
@@ -18,20 +16,37 @@ public class InsertOne implements IFunction {
 
     @Override
     public boolean run(RuleContext context) {
-        JSONObject inputVar = context.getInputVar();
-        String dbName = inputVar.getString("dbName") ;
-        String colName = inputVar.getString("colName") ;
-        JSONObject obj = inputVar.getJSONObject("data") ;
-        Assert.notNull(obj);
+        JSONObject rule = context.getTmpVar().getJSONObject(RuleConstant.TMP_ENTIRE_RULE) ;
+        JSONObject curFun = context.getTmpVar().getJSONObject(RuleConstant.TMP_CURRENT_FUN) ;
+//        int index = context.getTmpVar().getIntValue(RuleConstant.TMP_FUN_INDEX);
+        String dbName = curFun.getString("dbName") ;
+        String colName = curFun.getString("colName") ;
+
+        if(StringUtils.isEmpty(dbName)){
+            dbName = rule.getString("dbName") ;
+        }
+
+        if(StringUtils.isEmpty(colName)){
+            dbName = rule.getString("colName") ;
+        }
         /**
          * 为空，默认库
          */
         if(StringUtils.isEmpty(dbName)){
             dbName = RulePropertyUtils.getProperty("mongo.default.dbName");
         }
+        String varInput = curFun.getString("input") ;
+        String varOutput = curFun.getString("output") ;
 
-        String id = MongoUtils.insertOne(dbName,colName,new Document(obj));
+        JSONObject data = (JSONObject)JsonUtils.getValue(varInput,context) ;
 
-        return false;
+        Assert.notNull(data,"insert object is null");
+        String id = MongoUtils.insertOne(dbName,colName,new Document(data));
+//        context.putTmpVarValue(RuleConstant.TMP_VAR_PRIFF + index,id);
+        if (!StringUtils.isEmpty(varOutput)){
+            context.putTmpOrResultValue(varOutput,id);
+        }
+
+        return true;
     }
 }

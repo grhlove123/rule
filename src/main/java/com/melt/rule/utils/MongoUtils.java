@@ -1,5 +1,9 @@
 package com.melt.rule.utils;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.melt.rule.bean.RuleContext;
+import com.melt.rule.exception.RuleRuntimeException;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
@@ -13,10 +17,14 @@ import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.result.DeleteResult;
+import org.apache.commons.io.IOUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.*;
 
@@ -28,7 +36,7 @@ import static com.mongodb.client.model.Projections.*;
  * date: 2017-11-09
  */
 public class MongoUtils {
-
+	private static final Logger logger = LoggerFactory.getLogger(MongoUtils.class);
 	public static MongoClient mongoClient;
 //	private static GridFSBucket gridFSBucket ;
 
@@ -90,7 +98,7 @@ public class MongoUtils {
      * @param dbName    数据库名称
      * @param colName   集合名称
      * @param filter    条件
-     * @param pageNo    页码
+     * @param pageNo    页码	1开始
      * @param pageSize  页大小
      * @return
      */
@@ -105,14 +113,14 @@ public class MongoUtils {
      * 条件查询(分页)
      * @param dbName    数据库名称
      * @param colName   集合名称
-     * @param cols      显示列
-     * @param filter    条件
-     * @param orderBy   排序
-     * @param pageNo    页码
-     * @param pageSize  页大小
+     * @param cols      显示列	可以为空
+     * @param filter    条件		可以为空
+     * @param orderBy   排序		可以为空
+     * @param pageNo    页码		大于0分页
+     * @param pageSize  页大小	大于0分页
      * @return
      */
-    public static List<Document> queryByPage(String dbName,String colName,List<String> cols,Bson filter,
+    public static List<Document> query(String dbName,String colName,List<String> cols,Bson filter,
                                               Bson orderBy,int pageNo, int pageSize) {
         checkNotNull(dbName,colName);
         FindIterable<Document> fi = null ;
@@ -145,14 +153,14 @@ public class MongoUtils {
      * 条件查询(分页)
      * @param dbName    数据库名称
      * @param colName   集合名称
-     * @param hideCols  显示列
+     * @param hideCols  隐藏列
      * @param filter    条件
      * @param orderBy   排序
      * @param pageNo    页码
      * @param pageSize  页大小
      * @return  List<Document>
      */
-    public static List<Document> queryByPage2(String dbName,String colName,List<String> hideCols,Bson filter,
+    public static List<Document> query2(String dbName,String colName,List<String> hideCols,Bson filter,
                                                      Bson orderBy,int pageNo, int pageSize) {
         checkNotNull(dbName,colName);
         FindIterable<Document> fi = null ;
@@ -220,7 +228,7 @@ public class MongoUtils {
      */
 	public static List<Document> query(String dbName,String colName,Bson filter,Bson orderBy) {
         checkNotNull(dbName,colName);
-		return queryByPage(dbName,colName,null, filter, orderBy, 0, 0);
+		return query(dbName,colName,null, filter, orderBy, 0, 0);
 	}
 
     /**
@@ -244,7 +252,7 @@ public class MongoUtils {
      * @param dbName    数据库名称
      * @param colName   集合名称
      * @param id        主键
-     * @return
+     * @return int
      */
 	public static int deleteById(String dbName,String colName, String id) {
         checkNotNull(dbName,colName);
@@ -415,6 +423,116 @@ public class MongoUtils {
         return resMap ;
 	}
 
+	/**
+	 * 构建过滤条件
+	 * @param funObj	函数定义对象
+	 * @param context	规则上下文
+	 * @return	条件
+	 */
+	public static Bson buildWhere(JSONObject funObj, RuleContext context){
+		if (CollectionUtils.isEmpty(funObj)){
+			return null;
+		}
+		JSONObject where = funObj.getJSONObject("where") ;
+		if (CollectionUtils.isEmpty(where)){
+			return null;
+		}
 
+		if (where.size() > 1){
+			throw new RuleRuntimeException("the where must be one of [$and,$or]");
+		}
+		logger.debug("source where json: {}",where);
+		recursiveReplace(where,context) ;
+		logger.debug("after the replacement where json: {}",where);
+
+		return Document.parse(where.toJSONString()) ;
+
+	}
+
+	/**
+	 * 构建排序
+	 * @param funObj	函数定义对象
+	 * @param context	规则上下文
+	 * @return	排序
+	 */
+	public static Bson buildOrderBy(JSONObject funObj, RuleContext context){
+		if (CollectionUtils.isEmpty(funObj)){
+			return null;
+		}
+		JSONObject orderBy = funObj.getJSONObject("orderBy") ;
+		if (CollectionUtils.isEmpty(orderBy)){
+			return null;
+		}
+
+
+		logger.debug("source orderBy json: {}",orderBy);
+		recursiveReplace(orderBy,context) ;
+		logger.debug("after the replacement orderBy json: {}",orderBy);
+
+		return Document.parse(orderBy.toJSONString()) ;
+
+	}
+
+	/**
+	 * 把变量占位符替换成相应的值
+	 * @param where
+	 * @param context
+	 */
+	public static void recursiveReplace(JSONObject where, RuleContext context){
+		for (String key : where.keySet()){
+			Object val = where.get(key) ;
+			if (val instanceof String && ((String) val).startsWith("#")){
+				where.put(key,JsonUtils.getValue((String) val,context)) ;
+			} else if (val instanceof JSONObject){
+				recursiveReplace((JSONObject) val,context);
+			} else if (val instanceof JSONArray){
+				JSONArray jsonArray = (JSONArray)val ;
+				jsonArray.forEach(k -> {
+					recursiveReplace((JSONObject)k,context);
+				});
+			}
+
+		}
+	}
+
+	public static void main(String[] ars) throws Exception{
+//		Bson bson = and(or(eq("price", 0.99), eq("price", 1.99),
+//				or(eq("sale", true), lt("qty", 20))));
+//		System.out.println(bson);
+
+		InputStream inputStream = new FileInputStream("E:\\nantian\\人寿\\新一代\\规则\\rhguo\\hello.json") ;
+		String srule = IOUtils.toString(inputStream) ;
+		JSONObject jsonObject = JSONObject.parseObject(srule) ;
+
+		System.out.println(jsonObject.getJSONObject("ccc") + "a----");
+		System.out.println(jsonObject.getIntValue("111"));
+		JSONArray jsonArray = jsonObject.getJSONArray("funs") ;
+		JSONObject where = ((JSONObject)jsonArray.get(0)).getJSONObject("where") ;
+		int index = 0;
+		System.out.println(++index);
+
+//		jsonArray.forEach(k ->{
+//			where = ((JSONObject)k).getJSONObject("where") ;
+//
+//			System.out.println(where.toJSONString());
+//			where.forEach((k1,v1) -> {
+//				System.out.println(k1 + ":" + v1);
+//				v1 = 2;
+//			});
+//			System.out.println(where.toJSONString());
+//		});
+
+		RuleContext context = new RuleContext();
+		JSONObject inputVar = new JSONObject();
+		inputVar.put("p1",11) ;
+		inputVar.put("p2",21) ;
+		inputVar.put("sale",false) ;
+		inputVar.put("qty",3) ;
+		context.setInputVar(inputVar);
+//		recursiveReplace(where,context);
+//		System.out.println(where);
+//		System.out.println(Document.parse(where.toJSONString()));
+		buildWhere(where,context);
+	}
 
 }
